@@ -23,9 +23,80 @@ const mockData = {
   ],
 };
 
+// --- Sign In Form Component ---
+const SignInForm = ({ onLoginSuccess, onNavigateToRegister }) => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { email, password } = formData;
+    if (!email || !password) {
+      setError('All fields are required.');
+      return;
+    }
+    setError('');
+    // Simulate login and fetch company name
+    onLoginSuccess('AgriFuture Inc.'); 
+  };
+
+  return (
+    <div className="form-container">
+      <div className="form-header">
+        <h1>Welcome Back to PrecisionAg</h1>
+        <p>Sign in to access your dashboard and manage your operations.</p>
+      </div>
+      <form onSubmit={handleSubmit} noValidate>
+        {error && <p className="error-message">{error}</p>}
+        <div className="input-group">
+          <label htmlFor="email">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="you@company.com"
+            required
+            aria-label="Email Address"
+          />
+        </div>
+        <div className="input-group">
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="••••••••"
+            required
+            aria-label="Password"
+          />
+        </div>
+        <button type="submit" className="submit-btn">Sign In</button>
+      </form>
+      <div className="form-footer">
+        <p>Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onNavigateToRegister(); }}>Create one</a></p>
+      </div>
+    </div>
+  );
+};
+
 
 // --- Registration Form Component ---
-const RegistrationForm = ({ onRegisterSuccess }) => {
+const RegistrationForm = ({ onRegisterSuccess, onNavigateToSignIn }) => {
   const [formData, setFormData] = useState({
     companyName: '',
     fullName: '',
@@ -136,7 +207,7 @@ const RegistrationForm = ({ onRegisterSuccess }) => {
         <button type="submit" className="submit-btn">Create Account</button>
       </form>
       <div className="form-footer">
-        <p>Already have an account? <a href="#">Sign In</a></p>
+        <p>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); onNavigateToSignIn(); }}>Sign In</a></p>
       </div>
     </div>
   );
@@ -192,26 +263,42 @@ const Dashboard = ({ companyName, onLogout }) => {
 
 // --- Main App Component ---
 const App = () => {
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [view, setView] = useState('signIn'); // 'signIn', 'register', 'dashboard'
   const [companyName, setCompanyName] = useState('');
 
+  const handleLoginSuccess = (name) => {
+    setCompanyName(name);
+    setView('dashboard');
+  };
+  
   const handleRegisterSuccess = (name) => {
     setCompanyName(name);
-    setIsRegistered(true);
+    setView('dashboard');
   };
 
   const handleLogout = () => {
     setCompanyName('');
-    setIsRegistered(false);
+    setView('signIn');
+  };
+
+  const navigateToRegister = () => setView('register');
+  const navigateToSignIn = () => setView('signIn');
+
+  const renderView = () => {
+    switch(view) {
+      case 'dashboard':
+        return <Dashboard companyName={companyName} onLogout={handleLogout} />;
+      case 'register':
+        return <RegistrationForm onRegisterSuccess={handleRegisterSuccess} onNavigateToSignIn={navigateToSignIn} />;
+      case 'signIn':
+      default:
+        return <SignInForm onLoginSuccess={handleLoginSuccess} onNavigateToRegister={navigateToRegister} />;
+    }
   };
 
   return (
     <main className="container">
-      {isRegistered ? (
-        <Dashboard companyName={companyName} onLogout={handleLogout} />
-      ) : (
-        <RegistrationForm onRegisterSuccess={handleRegisterSuccess} />
-      )}
+      {renderView()}
     </main>
   );
 };
